@@ -1,0 +1,67 @@
+.news-header {
+  font-size: 1rem;
+  color: #1a1b22;
+  min-height: 20.77em;
+  color: #1a1b22;
+}
+
+.news-header__title {
+  margin: 40px 0 0 104px;
+  font-size: 1em;
+  line-height: 1.33em;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: normal;
+  opacity: .5;
+}
+
+.news-header__wellcome-info {
+  margin: 28px 0 0 104px;
+  font-size: 2.22em;
+  line-height: 1.15em;
+  font-family: 'Roboto Slab', Arial, sans-serif;
+  font-weight: normal;
+  max-width: 13.25em;
+}
+
+.news-header__info {
+  margin: 30px 0 0 104px;
+  line-height: 1.33em;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: normal;
+}
+
+@media screen and (max-width: 920px) {
+  .news-header {
+    font-size: .78rem;
+    min-height: 19.28em;
+  }
+
+  .news-header__title {
+    margin: 24px 0 0 40px;
+  }
+
+  .news-header__wellcome-info {
+    margin: 16px 0 0 40px;
+  }
+
+  .news-header__info {
+    margin: 16px 0 0 40px;
+  }
+}
+
+@media screen and (max-width: 475px) {
+  .news-header__title {
+    margin: 8px 0 0 16px;
+  }
+
+  .news-header__wellcome-info {
+    margin: 16px 16px 0;
+  }
+
+  .news-header__info {
+    margin: 16px 16px 0;
+    font-size: 1rem;
+    line-height: 1.33em;
+    max-width: 16em;
+  }
+}

@@ -1,0 +1,7 @@
+.card-section {
+  background-color: #f5f6f7;
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 282px;
+}
