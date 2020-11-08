@@ -1,0 +1,6 @@
+@import url('./vendor/normalize.css');
+@import url('./vendor/fonts/font.css');
+
+.document {
+  font-size: 18px;
+}
