@@ -9,18 +9,25 @@ import AuthorizationPopup from '../AuthorizationPopup/AuthorizationPopup';
 import RegistrationPopup from '../RegistrationPopup/RegistrationPopup';
 import InfoPopup from '../InfoPopup/InfoPopup';
 import { Route, Switch, useHistory } from 'react-router-dom';
+import { CurrentUserContext } from '../../contexts/CurrentUserContext';
+import currentNewsApi from '../../utils/NewsApi';
 
 
 function App() {
 
-  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, notFound: false, success: true });
+  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, error: '', success: true });
   const [authPopupIsOpened, setAuthPopupOpened] = React.useState(false);
   const [regPopupIsOpened, setRegPopupOpened] = React.useState(false);
   const [infoPopupIsOpened, setInfoPopupOpened] = React.useState(false);
   const [mobileNavIsOpened, setMobileNavOpened] = React.useState(false);
   const [isLoggedIn, setLoggedIn] = React.useState(false);
 
+  const [foundNews, setFoundNews] = React.useState([]);
+  const [currentUser, setCurrentUser] = React.useState([]);
+
   const history = useHistory();
+
+  const serverError = 'Во время запроса произошла ошибка. Возможно, проблема с соединением или сервер недоступен. Подождите немного и попробуйте ещё раз.'
 
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
@@ -53,7 +60,7 @@ function App() {
     setInfoPopupOpened(false);
   }
 
-   // обработка перехода между popup'ами
+  // обработка перехода между popup'ами
   const handleChangePopupClick = () => {
     document.removeEventListener('keydown', handleEscClick);
     if (authPopupIsOpened) {
@@ -64,6 +71,24 @@ function App() {
       setRegPopupOpened(false);
       setInfoPopupOpened(false);
     }
+  }
+
+  const handleSearchSubmit = (keyword) => {
+    setSearchStatus({ waiting: true, error: '', success: false });
+
+    currentNewsApi.getNews(keyword)
+      .then((data) => {
+        if (data) {
+          console.log(data);
+          setFoundNews(data);
+          setSearchStatus({ waiting: false, error: '', success: true })
+        } else {
+          setSearchStatus({ waiting: false, error: 'Поиск не дал результатов', success: false })
+        }
+      })
+      .catch(() => {
+        setSearchStatus({ waiting: true, error: serverError, success: false })
+      })
   }
 
   const handleOnSubmitLogin = (evt) => {
@@ -89,49 +114,54 @@ function App() {
   }
 
   return (
-    <div className="page">
-      <Switch>
-        <Route exact path="/">
-          <Header
-            isLoggedIn={isLoggedIn}
-            isMobileNavOpened={mobileNavIsOpened}
-            onMenuButtonClick={handleMainMenuButtonClick}
-            onMobileMenuClick={handleMobileMenuClick}
-            onMobileMenuClose={handleMobileMenuClose}
-          />
-          <Main status={searchStatus} />
-          <AuthorizationPopup
-            isOpened={authPopupIsOpened}
-            onSubmit={handleOnSubmitLogin}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-          <RegistrationPopup
-            isOpened={regPopupIsOpened}
-            onSubmit={handleOnSubmitRegistration}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-          <InfoPopup
-            isOpened={infoPopupIsOpened}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-        </Route>
-        <Route path="/saved-news">
-          <SavedNewsHeader
-            newsCount="5"
-            isLoggedIn={isLoggedIn}
-            isMobileNavOpened={mobileNavIsOpened}
-            onMenuButtonClick={handleMainMenuButtonClick}
-            onMobileMenuClick={handleMobileMenuClick}
-            onMobileMenuClose={handleMobileMenuClose}
-          />
-          <SavedNews />
-        </Route>
-      </Switch>
-      <Footer />
-    </div>
+    <CurrentUserContext.Provider value={currentUser}>
+      <div className="page">
+        <Switch>
+          <Route exact path="/">
+            <Header
+              isLoggedIn={isLoggedIn}
+              isMobileNavOpened={mobileNavIsOpened}
+              onMenuButtonClick={handleMainMenuButtonClick}
+              onMobileMenuClick={handleMobileMenuClick}
+              onMobileMenuClose={handleMobileMenuClose}
+              onSearchSubmit={handleSearchSubmit}
+            />
+            <Main
+              status={searchStatus}
+            />
+            <AuthorizationPopup
+              isOpened={authPopupIsOpened}
+              onSubmit={handleOnSubmitLogin}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+            />
+            <RegistrationPopup
+              isOpened={regPopupIsOpened}
+              onSubmit={handleOnSubmitRegistration}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+            />
+            <InfoPopup
+              isOpened={infoPopupIsOpened}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+            />
+          </Route>
+          <Route path="/saved-news">
+            <SavedNewsHeader
+              newsCount="5"
+              isLoggedIn={isLoggedIn}
+              isMobileNavOpened={mobileNavIsOpened}
+              onMenuButtonClick={handleMainMenuButtonClick}
+              onMobileMenuClick={handleMobileMenuClick}
+              onMobileMenuClose={handleMobileMenuClose}
+            />
+            <SavedNews />
+          </Route>
+        </Switch>
+        <Footer />
+      </div>
+    </CurrentUserContext.Provider>
   );
 }
 

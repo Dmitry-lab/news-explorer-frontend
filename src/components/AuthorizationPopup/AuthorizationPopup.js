@@ -2,24 +2,24 @@ import React from 'react';
 import PopupWithForm from '../PopupWithForm/PopupWithForm';
 
 function AuthorizationPopup(props) {
-  const [email, setEmail] = React.useState("");
-  const [emailError, setEmailError] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [email, setEmail] = React.useState('');
+  const [emailError, setEmailError] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
   React.useEffect(() => {
     if (props.isOpened) {
-      setEmail("");
-      setPassword("");
-      setEmailError("");
+      setEmail('');
+      setPassword('');
+      setEmailError('');
     }
   }, [props.isOpened])
 
   const emailChangeHandler = (evt) => {
     setEmail(evt.target.value);
     if ((!evt.target.validity.valid) && evt.target.value)
-      setEmailError("Неправильный формат Email")
+      setEmailError('Неправильный формат Email')
     else
-      setEmailError("");
+      setEmailError('');
   }
 
   const passwordChangeHandler = (evt) => {
