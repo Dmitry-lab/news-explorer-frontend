@@ -15,24 +15,47 @@ import currentNewsApi from '../../utils/NewsApi';
 
 function App() {
 
-  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, error: '', success: true });
+  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, error: '', success: false });
   const [authPopupIsOpened, setAuthPopupOpened] = React.useState(false);
   const [regPopupIsOpened, setRegPopupOpened] = React.useState(false);
   const [infoPopupIsOpened, setInfoPopupOpened] = React.useState(false);
   const [mobileNavIsOpened, setMobileNavOpened] = React.useState(false);
   const [isLoggedIn, setLoggedIn] = React.useState(false);
+  const [isMoreNews, setMoreNews] = React.useState(true);
+  const [previousKeyword, setPreviousKeyword] = React.useState('');
 
-  const [foundNews, setFoundNews] = React.useState([]);
+  const [foundNews, setFoundNews] = React.useState({ news: [], displayed: 0 });
   const [currentUser, setCurrentUser] = React.useState([]);
 
   const history = useHistory();
 
   const serverError = 'Во время запроса произошла ошибка. Возможно, проблема с соединением или сервер недоступен. Подождите немного и попробуйте ещё раз.'
 
+  // загрузка данных из localStorage при монтировании компонента
+  React.useEffect(() => {
+    const newsFromStorage = JSON.parse(localStorage.getItem('newsArticles'));
+    const newsArrLength = newsFromStorage ? newsFromStorage.news.length : 0;
+
+    if (newsArrLength) {
+      setSearchStatus({ waiting: false, error: '', success: true })
+      setFoundNews({ news: newsFromStorage.news, displayed: newsFromStorage.displayed });
+      setPreviousKeyword(localStorage.getItem('keyword'));
+      if (newsArrLength <= newsFromStorage.displayed) {
+        setMoreNews(false);
+      }
+    }
+  }, []);
+
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
     setMobileNavOpened(false);
   }, [authPopupIsOpened, isLoggedIn]);
+
+
+  // запись данных в localStorage
+  React.useEffect(() => {
+    localStorage.setItem('newsArticles', JSON.stringify(foundNews));
+  }, [foundNews])
 
   const handleEscClick = (evt) => {
     if (evt.key === 'Escape') {
@@ -45,8 +68,7 @@ function App() {
     if (isLoggedIn) {
       setLoggedIn(false);
       history.push('/');
-    }
-    else {
+    } else {
       setAuthPopupOpened(true);
       document.addEventListener('keydown', handleEscClick);
     }
@@ -73,22 +95,39 @@ function App() {
     }
   }
 
+  // обработка нажатия кнопки "Искать"
   const handleSearchSubmit = (keyword) => {
     setSearchStatus({ waiting: true, error: '', success: false });
+    localStorage.clear();
 
     currentNewsApi.getNews(keyword)
       .then((data) => {
-        if (data) {
-          console.log(data);
-          setFoundNews(data);
+        if (data.articles.length) {
+          setFoundNews({ news: data.articles, displayed: 3 });
           setSearchStatus({ waiting: false, error: '', success: true })
+          if (data.articles.length > 3) {
+            setMoreNews(true)
+          } else {
+            setMoreNews(false)
+          }
+
+          localStorage.setItem('keyword', keyword);
         } else {
           setSearchStatus({ waiting: false, error: 'Поиск не дал результатов', success: false })
         }
       })
       .catch(() => {
-        setSearchStatus({ waiting: true, error: serverError, success: false })
+        setSearchStatus({ waiting: false, error: serverError, success: false })
       })
+  }
+
+  // обработка нажатия кнопки "Показать ещё"
+  const handleMoreButtonClick = () => {
+    const newNumber = foundNews.displayed + 3;
+    if (newNumber >= foundNews.news.length) {
+      setMoreNews(false);
+    }
+    setFoundNews({ news: foundNews.news, displayed: newNumber });
   }
 
   const handleOnSubmitLogin = (evt) => {
@@ -125,9 +164,14 @@ function App() {
               onMobileMenuClick={handleMobileMenuClick}
               onMobileMenuClose={handleMobileMenuClose}
               onSearchSubmit={handleSearchSubmit}
+              keyword={previousKeyword}
             />
             <Main
               status={searchStatus}
+              newsObj={foundNews}
+              loggedIn={isLoggedIn}
+              moreNews={isMoreNews}
+              onMoreButtonClick={handleMoreButtonClick}
             />
             <AuthorizationPopup
               isOpened={authPopupIsOpened}

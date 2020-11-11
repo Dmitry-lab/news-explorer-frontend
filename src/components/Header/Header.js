@@ -18,7 +18,10 @@ function Header(props) {
       />
       <h1 className="header__title">Что творится в мире?</h1>
       <p className="header__info">Находите самые свежие статьи на любую тему и сохраняйте в своём личном кабинете.</p>
-      <SearchForm onSearchSubmit={props.onSearchSubmit}/>
+      <SearchForm
+        onSearchSubmit={props.onSearchSubmit}
+        keyword={props.keyword}
+      />
       <MobileNavigation
         name={props.isLoggedIn ? "Грета" : ""}
         {...props}

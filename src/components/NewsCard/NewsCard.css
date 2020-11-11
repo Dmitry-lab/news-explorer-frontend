@@ -13,8 +13,16 @@
   width: 100%;
   height: 272px;
   object-fit: cover;
+  object-position: center;
   border-top-right-radius: 16px;
   border-top-left-radius: 16px;
+}
+
+.card__image::before {
+  content: '';
+  width: 100%;
+  height: 253px;
+  display: block;
 }
 
 .card__date {

@@ -7,7 +7,7 @@ import './NewsCard.css';
 function NewsCard(props) {
   return (
     <div className="card">
-      <img className="card__image" src={props.imageSrc} alt="тест!"/>
+      <img className="card__image" src={props.imageSrc} alt="картинка карточки новости"/>
       <a className="card__cover" href={props.src} target="_blank" rel="noreferrer"> </a>
       <p className="card__date">{props.date}</p>
       <h3 className="card__title">{props.title}</h3>
@@ -32,7 +32,7 @@ function NewsCard(props) {
           />
         </button>
       }
-      {props.loggedIn && !props.savedNews && <div className="card__save-info">Войдите, чтобы сохранять статьи</div>}
+      {!props.loggedIn && !props.savedNews && <div className="card__save-info">Войдите, чтобы сохранять статьи</div>}
       {props.savedNews && <div className="card__save-info">Убрать из сохраненных</div>}
       {props.savedNews && <div className="card__keyword">{props.keyWord}</div>}
     </div>

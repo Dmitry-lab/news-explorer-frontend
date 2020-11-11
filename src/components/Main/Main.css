@@ -49,7 +49,10 @@
   height: 3.55em;
   margin: 0 auto 4.44em;
   transition: .3s ease-in;
+}
 
+.result-section__more-button_hidden {
+  display: none;
 }
 
 .result-section__more-button:hover {

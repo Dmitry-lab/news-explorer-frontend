@@ -13,6 +13,10 @@ function SearchForm(props) {
       props.onSearchSubmit(keyword);
   }
 
+  React.useEffect(() => {
+    setKeyword(props.keyword)
+  }, [props.keyword])
+
   return (
     <form className="search-form" onSubmit={handleSearchSubmit} noValidate>
       <input
