@@ -18,7 +18,12 @@ function RegistrationPopup(props) {
     }
   }, [props.isOpened])
 
-  const emailChangeHandler = (evt) => {
+  const handleSubmitClick = (evt) => {
+    evt.preventDefault();
+    props.onSubmit(name, email, password);
+  }
+
+  const handleEmailChange = (evt) => {
     setEmail(evt.target.value);
     if ((!evt.target.validity.valid) && evt.target.value)
       setEmailError('Неправильный формат Email')
@@ -26,11 +31,11 @@ function RegistrationPopup(props) {
       setEmailError('');
   }
 
-  const passwordChangeHandler = (evt) => {
+  const handlePasswordChange = (evt) => {
     setPassword(evt.target.value);
   }
 
-  const nameChangeHandler = (evt) => {
+  const handleNameChange = (evt) => {
     setName(evt.target.value);
     if ((!evt.target.validity.valid) && evt.target.value)
       setNameError('Имя должно содержать минимум 2 символа')
@@ -46,6 +51,7 @@ function RegistrationPopup(props) {
       bottomButtonText="Войти"
       isNoValid={emailError || nameError || !name || !email || !password}
       isInfo={false}
+      onSubmitClick={handleSubmitClick}
       {...props}
     >
       <label className="popup__label" htmlFor="reg-email">Email</label>
@@ -56,7 +62,7 @@ function RegistrationPopup(props) {
         placeholder="Введите почту"
         required={true}
         value={email}
-        onChange={emailChangeHandler}
+        onChange={handleEmailChange}
       />
       <span className="popup__error-text">{emailError}</span>
       <label className="popup__label" htmlFor="reg-password">Пароль</label>
@@ -67,7 +73,7 @@ function RegistrationPopup(props) {
         placeholder="Введите пароль"
         required={true}
         value={password}
-        onChange={passwordChangeHandler}
+        onChange={handlePasswordChange}
       />
       <label className="popup__label" htmlFor="name">Имя</label>
       <input
@@ -77,11 +83,12 @@ function RegistrationPopup(props) {
         placeholder="Введите своё имя"
         required={true}
         value={name}
-        onChange={nameChangeHandler}
+        onChange={handleNameChange}
         minLength="2"
         maxLength="30"
       />
       <span className="popup__error-text">{nameError}</span>
+      <span className="popup__error-text popup__error-text_general">{props.formError}</span>
     </PopupWithForm>
   )
 }

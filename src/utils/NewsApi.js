@@ -1,28 +1,28 @@
 const baseUrl = 'https://newsapi.org/v2/everything?';
 // const baseUrl = 'https://nomoreparties.co/news/v2/everything?';
-const newsSort ='sortBy=popularity&';
+const sortOrder ='sortBy=popularity&';
 const pageSize = 'pageSize=100&';
 const language='language=ru&'
 const apiKey = 'apiKey=114235093df642b68331220569daca62'
 const dateDelta = 7;
 
 class NewsApi {
-  constructor({ url, sortOrder, key, size, language, delta }) {
-    this.url = url;
-    this.sortOrder = sortOrder;
-    this.key = key;
-    this.size = size;
-    this.language = language;
-    this.delta = delta;
+  constructor(options) {
+    this._url = options.baseUrl;
+    this._sortOrder = options.sortOrder;
+    this._key = options.apiKey;
+    this._size = options.pageSize;
+    this._language = options.language;
+    this._delta = options.dateDelta;
   }
 
   _createUrl(keyword, from , to) {
-    return `${this.url}q=${keyword}&from=${from}&to=${to}&${this.sortOrder}${this.language}${this.size}${this.key}`;
+    return `${this._url}q=${keyword}&from=${from}&to=${to}&${this._sortOrder}${this._language}${this._size}${this._key}`;
   }
 
   // функция для получения даты, с которой необходимо начать поиск
   _getFromDate(currentDate) {
-    currentDate.setDate(currentDate.getDate() - this.delta);
+    currentDate.setDate(currentDate.getDate() - this._delta);
     return currentDate;
   }
 
@@ -50,15 +50,6 @@ class NewsApi {
   }
 }
 
-const currentNewsApi = new NewsApi(
-  {
-    url: baseUrl,
-    sortOrder: newsSort,
-    size: pageSize,
-    language: language,
-    key: apiKey,
-    delta: dateDelta
-  }
-);
+const currentNewsApi = new NewsApi({ baseUrl, sortOrder, pageSize, language, apiKey, dateDelta });
 
 export default currentNewsApi;

@@ -8,10 +8,10 @@ import SavedNews from '../SavedNews/SavedNews';
 import AuthorizationPopup from '../AuthorizationPopup/AuthorizationPopup';
 import RegistrationPopup from '../RegistrationPopup/RegistrationPopup';
 import InfoPopup from '../InfoPopup/InfoPopup';
-import { Route, Switch, useHistory } from 'react-router-dom';
+import { Route, Switch, Redirect, useHistory } from 'react-router-dom';
 import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 import currentNewsApi from '../../utils/NewsApi';
-
+import currentMainApi from '../../utils/MainApi';
 
 function App() {
 
@@ -23,6 +23,7 @@ function App() {
   const [isLoggedIn, setLoggedIn] = React.useState(false);
   const [isMoreNews, setMoreNews] = React.useState(true);
   const [previousKeyword, setPreviousKeyword] = React.useState('');
+  const [formError, setFormError] = React.useState('');
 
   const [foundNews, setFoundNews] = React.useState({ news: [], displayed: 0 });
   const [currentUser, setCurrentUser] = React.useState([]);
@@ -65,6 +66,7 @@ function App() {
 
   // обработка нажатия кнопки на основной панели навигации
   const handleMainMenuButtonClick = () => {
+    setFormError('');
     if (isLoggedIn) {
       setLoggedIn(false);
       history.push('/');
@@ -85,6 +87,7 @@ function App() {
   // обработка перехода между popup'ами
   const handleChangePopupClick = () => {
     document.removeEventListener('keydown', handleEscClick);
+    setFormError('');
     if (authPopupIsOpened) {
       setAuthPopupOpened(false);
       setRegPopupOpened(true);
@@ -137,11 +140,28 @@ function App() {
     setAuthPopupOpened(false);
   }
 
-  const handleOnSubmitRegistration = (evt) => {
-    evt.preventDefault();
+  const handleSubmitRegistration = (name, email, password) => {
     document.removeEventListener('keydown', handleEscClick);
-    setRegPopupOpened(false);
-    setInfoPopupOpened(true);
+    currentMainApi.register(name, email, password)
+      .then((data) => {
+        if (data) {
+          setRegPopupOpened(false);
+          setInfoPopupOpened(true);
+        } else {
+          setFormError('Ошибка сервера. Попробуйте зарегистрироваться снова.')
+        }
+      })
+      .catch((err) => {
+        if (err === 409) {
+          setFormError('Пользователь с таким Email уже существует.');
+          setRegPopupOpened(true);
+        }
+        else {
+          setFormError('Ошибка сервера. Попробуйте зарегистрироваться снова.');
+          setRegPopupOpened(true);
+        }
+      })
+
   }
 
   const handleMobileMenuClick = (evt) => {
@@ -181,9 +201,10 @@ function App() {
             />
             <RegistrationPopup
               isOpened={regPopupIsOpened}
-              onSubmit={handleOnSubmitRegistration}
+              onSubmit={handleSubmitRegistration}
               onCloseClick={handleCloseButtonClick}
               onChangePopup={handleChangePopupClick}
+              formError={formError}
             />
             <InfoPopup
               isOpened={infoPopupIsOpened}
@@ -201,6 +222,9 @@ function App() {
               onMobileMenuClose={handleMobileMenuClose}
             />
             <SavedNews />
+          </Route>
+          <Route>
+            <Redirect to="/" />
           </Route>
         </Switch>
         <Footer />
