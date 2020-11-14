@@ -1,6 +1,7 @@
 import React from 'react';
 import NewsCard from '../NewsCard/NewsCard';
 import './NewsCardList.css';
+import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 
 function NewsCardList(props) {
 
@@ -10,26 +11,48 @@ function NewsCardList(props) {
       date.toLocaleDateString('ru', { month: 'long' }) + ',' +  date.toLocaleDateString('ru', { year: 'numeric' })
   }
 
-  const number = props.newsObj.displayed;
-  const currentNewsArr = props.newsObj.news.slice(0, number);
+  const currentUser = React.useContext(CurrentUserContext);
+
+  const number = !props.savedNews ? props.newsObj.displayed : 0;
+  const currentNewsArr = !props.savedNews ? props.newsObj.news.slice(0, number) : [];
 
   return (
     <div className="card-list">
-      {currentNewsArr.map((item) => {
-        return (
-          <NewsCard
-            loggedIn={props.loggedIn}
-            savedNews={props.savedNews}
-            imageSrc={item.urlToImage}
-            date={formatString(item.publishedAt)}
-            title={item.title}
-            text={item.description}
-            source={item.source.name}
-            keyWord={item.keyWord}
-            src={item.url}
-          />
-        )
-      })}
+      {props.savedNews ?
+        currentUser.savedNews.map((item, index) => {
+          return (
+            <NewsCard
+              key={index}
+              loggedIn={props.loggedIn}
+              savedNews={props.savedNews}
+              imageSrc={item.urlToImage}
+              date={formatString(item.publishedAt)}
+              title={item.title}
+              text={item.description}
+              source={item.source.name}
+              keyWord={item.keyWord}
+              src={item.url}
+            />
+          )
+        }) :
+        currentNewsArr.map((item, index) => {
+          return (
+            <NewsCard
+              key={index}
+              loggedIn={props.loggedIn}
+              savedNews={props.savedNews}
+              imageSrc={item.urlToImage}
+              date={formatString(item.publishedAt)}
+              title={item.title}
+              text={item.description}
+              source={item.source.name}
+              keyWord={item.keyWord}
+              src={item.url}
+              onButtonClick={props.onCardButtonClick}
+            />
+          )
+        })
+      }
 
     </div>
   )

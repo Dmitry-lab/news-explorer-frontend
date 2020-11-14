@@ -9,7 +9,7 @@ import AuthorizationPopup from '../AuthorizationPopup/AuthorizationPopup';
 import RegistrationPopup from '../RegistrationPopup/RegistrationPopup';
 import InfoPopup from '../InfoPopup/InfoPopup';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
-import { Route, Switch, Redirect, useHistory, useLocation } from 'react-router-dom';
+import { Route, Switch, Redirect, useHistory } from 'react-router-dom';
 import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 import currentNewsApi from '../../utils/NewsApi';
 import currentMainApi from '../../utils/MainApi';
@@ -21,7 +21,7 @@ function App() {
   const [regPopupIsOpened, setRegPopupOpened] = React.useState(false);
   const [infoPopupIsOpened, setInfoPopupOpened] = React.useState(false);
   const [mobileNavIsOpened, setMobileNavOpened] = React.useState(false);
-  const [isLoggedIn, setLoggedIn] = React.useState(false);
+  const [isLoggedIn, setLoggedIn] = React.useState(true);
   const [isMoreNews, setMoreNews] = React.useState(true);
   const [previousKeyword, setPreviousKeyword] = React.useState('');
   const [formError, setFormError] = React.useState('');
@@ -30,11 +30,10 @@ function App() {
   const [currentUser, setCurrentUser] = React.useState({ name: '', _id: '', savedNews: [] });
 
   const history = useHistory();
-  const location = useLocation();
 
   const serverError = 'Во время запроса произошла ошибка. Возможно, проблема с соединением или сервер недоступен. Подождите немного и попробуйте ещё раз.'
 
-  // загрузка данных о последнем поиске из localStorage при монтировании компонента
+  // загрузка данных о последнем поиске из localStorage при монтировании компонента App
   React.useEffect(() => {
     const newsFromStorage = JSON.parse(localStorage.getItem('newsArticles'));
     const newsArrLength = newsFromStorage ? newsFromStorage.news.length : 0;
@@ -49,10 +48,10 @@ function App() {
     }
   }, []);
 
-  // загрузка данных о пользователе при монтировании
+  // загрузка данных о пользователе при монтировании App
   React.useEffect(() => {
     if (localStorage.getItem('token'))
-      setLoggedIn(true);
+      fillСurrentUser();
   }, []);
 
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
@@ -73,6 +72,7 @@ function App() {
     }
   }, [isLoggedIn])
 
+  // обработка нажатия Esc при открытом модпльном окне
   const handleEscClick = (evt) => {
     if (evt.key === 'Escape') {
       handleCloseButtonClick();
@@ -86,12 +86,14 @@ function App() {
         if (res.data) {
           setCurrentUser({ name: res.data.name, _id: res.data._id, savedNews: [] })
         } else {
-          alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+          if (localStorage.getItem('token'))
+            console.log('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
           setLoggedIn(false);
         }
       })
       .catch(() => {
-        alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+        if (localStorage.getItem('token'))
+          console.log('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
         setLoggedIn(false);
       })
   }
@@ -135,7 +137,8 @@ function App() {
   // обработка нажатия кнопки "Искать"
   const handleSearchSubmit = (keyword) => {
     setSearchStatus({ waiting: true, error: '', success: false });
-    localStorage.clear();
+    localStorage.removeItem('keyword');
+    localStorage.removeItem('newsArticles');
 
     currentNewsApi.getNews(keyword)
       .then((data) => {
@@ -165,6 +168,22 @@ function App() {
       setMoreNews(false);
     }
     setFoundNews({ news: foundNews.news, displayed: newNumber });
+  }
+
+  // обработка нажатия кнопки "Сохранить" на карточке
+  const handleCardSaveButton = (cardAttributes, articleKey) => {
+    currentMainApi.saveArticle(cardAttributes)
+      .then((res) => {
+        if (res.data) {
+          const updatedFoundNews = foundNews.map((item, index) => {
+            if (index === articleKey)
+              item.savedId = res.data._id
+
+            return item
+          })
+          setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+        }
+      })
   }
 
   const handleOnSubmitLogin = (email, password) => {
@@ -240,6 +259,7 @@ function App() {
               loggedIn={isLoggedIn}
               moreNews={isMoreNews}
               onMoreButtonClick={handleMoreButtonClick}
+              onCardButtonClick={handleCardSaveButton}
             />
             <AuthorizationPopup
               isOpened={authPopupIsOpened}
@@ -261,7 +281,7 @@ function App() {
               onChangePopup={handleChangePopupClick}
             />
           </Route>
-          <ProtectedRoute path="/saved-news" location={location} loggedIn={isLoggedIn} openAuthFunction={setAuthPopupOpened}>
+          <ProtectedRoute path="/saved-news" loggedIn={isLoggedIn} openAuthFunction={setAuthPopupOpened}>
             <SavedNewsHeader
               newsCount="5"
               isLoggedIn={isLoggedIn}

@@ -46,6 +46,19 @@ class MainApi {
       })
   }
 
+  saveArticle() {
+    return fetch(`${baseUrl}/articles`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+    .then((res) => {
+      if (res.ok)
+        return res.json();
+      else
+        return Promise.reject(res.status)
+    })
+  }
+
 }
 
 const currentMainApi = new MainApi({ baseUrl });

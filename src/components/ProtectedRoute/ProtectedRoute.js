@@ -4,7 +4,7 @@ import { Route, Redirect } from 'react-router-dom';
 function ProtectedRoute(props) {
 
   React.useEffect(() => {
-    if (!props.loggedIn) {
+    if (!localStorage.getItem('token')) {
       props.openAuthFunction(true);
     }
   }, [])
