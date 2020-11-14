@@ -8,7 +8,8 @@ import SavedNews from '../SavedNews/SavedNews';
 import AuthorizationPopup from '../AuthorizationPopup/AuthorizationPopup';
 import RegistrationPopup from '../RegistrationPopup/RegistrationPopup';
 import InfoPopup from '../InfoPopup/InfoPopup';
-import { Route, Switch, Redirect, useHistory } from 'react-router-dom';
+import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
+import { Route, Switch, Redirect, useHistory, useLocation } from 'react-router-dom';
 import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 import currentNewsApi from '../../utils/NewsApi';
 import currentMainApi from '../../utils/MainApi';
@@ -26,13 +27,14 @@ function App() {
   const [formError, setFormError] = React.useState('');
 
   const [foundNews, setFoundNews] = React.useState({ news: [], displayed: 0 });
-  const [currentUser, setCurrentUser] = React.useState([]);
+  const [currentUser, setCurrentUser] = React.useState({ name: '', _id: '', savedNews: [] });
 
   const history = useHistory();
+  const location = useLocation();
 
   const serverError = 'Во время запроса произошла ошибка. Возможно, проблема с соединением или сервер недоступен. Подождите немного и попробуйте ещё раз.'
 
-  // загрузка данных из localStorage при монтировании компонента
+  // загрузка данных о последнем поиске из localStorage при монтировании компонента
   React.useEffect(() => {
     const newsFromStorage = JSON.parse(localStorage.getItem('newsArticles'));
     const newsArrLength = newsFromStorage ? newsFromStorage.news.length : 0;
@@ -47,6 +49,12 @@ function App() {
     }
   }, []);
 
+  // загрузка данных о пользователе при монтировании
+  React.useEffect(() => {
+    if (localStorage.getItem('token'))
+      setLoggedIn(true);
+  }, []);
+
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
     setMobileNavOpened(false);
@@ -58,16 +66,42 @@ function App() {
     localStorage.setItem('newsArticles', JSON.stringify(foundNews));
   }, [foundNews])
 
+  // получение данные пользователя
+  React.useEffect(() => {
+    if (isLoggedIn) {
+      fillСurrentUser();
+    }
+  }, [isLoggedIn])
+
   const handleEscClick = (evt) => {
     if (evt.key === 'Escape') {
       handleCloseButtonClick();
     }
   }
 
+  // получение данных пользователя
+  const fillСurrentUser = () => {
+    currentMainApi.getUserInfo()
+      .then((res) => {
+        if (res.data) {
+          setCurrentUser({ name: res.data.name, _id: res.data._id, savedNews: [] })
+        } else {
+          alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+          setLoggedIn(false);
+        }
+      })
+      .catch(() => {
+        alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+        setLoggedIn(false);
+      })
+  }
+
   // обработка нажатия кнопки на основной панели навигации
   const handleMainMenuButtonClick = () => {
     setFormError('');
     if (isLoggedIn) {
+      localStorage.removeItem('token');
+      setCurrentUser({ name: '', _id: '', savedNews: [] });
       setLoggedIn(false);
       history.push('/');
     } else {
@@ -133,18 +167,34 @@ function App() {
     setFoundNews({ news: foundNews.news, displayed: newNumber });
   }
 
-  const handleOnSubmitLogin = (evt) => {
-    evt.preventDefault();
+  const handleOnSubmitLogin = (email, password) => {
     document.removeEventListener('keydown', handleEscClick);
-    setLoggedIn(true);
-    setAuthPopupOpened(false);
+    currentMainApi.authorize(email, password)
+      .then((res) => {
+        if (res.token) {
+          localStorage.setItem('token', res.token)
+          setLoggedIn(true);
+          setAuthPopupOpened(false);
+        } else {
+          return Promise.reject(res.status);
+        }
+      })
+      .catch((err) => {
+        setAuthPopupOpened(true);
+        if (err === 401) {
+          setFormError('Неправильный Email или пароль.');
+        } else {
+          setFormError('Ошибка сервера. Попробуйте авторизоваться позднее.');
+        }
+      })
+
   }
 
   const handleSubmitRegistration = (name, email, password) => {
     document.removeEventListener('keydown', handleEscClick);
     currentMainApi.register(name, email, password)
-      .then((data) => {
-        if (data) {
+      .then((res) => {
+        if (res.data) {
           setRegPopupOpened(false);
           setInfoPopupOpened(true);
         } else {
@@ -152,13 +202,11 @@ function App() {
         }
       })
       .catch((err) => {
+        setRegPopupOpened(true);
         if (err === 409) {
           setFormError('Пользователь с таким Email уже существует.');
-          setRegPopupOpened(true);
-        }
-        else {
+        } else {
           setFormError('Ошибка сервера. Попробуйте зарегистрироваться снова.');
-          setRegPopupOpened(true);
         }
       })
 
@@ -198,6 +246,7 @@ function App() {
               onSubmit={handleOnSubmitLogin}
               onCloseClick={handleCloseButtonClick}
               onChangePopup={handleChangePopupClick}
+              formError={formError}
             />
             <RegistrationPopup
               isOpened={regPopupIsOpened}
@@ -212,7 +261,7 @@ function App() {
               onChangePopup={handleChangePopupClick}
             />
           </Route>
-          <Route path="/saved-news">
+          <ProtectedRoute path="/saved-news" location={location} loggedIn={isLoggedIn} openAuthFunction={setAuthPopupOpened}>
             <SavedNewsHeader
               newsCount="5"
               isLoggedIn={isLoggedIn}
@@ -222,7 +271,7 @@ function App() {
               onMobileMenuClose={handleMobileMenuClose}
             />
             <SavedNews />
-          </Route>
+          </ProtectedRoute>
           <Route>
             <Redirect to="/" />
           </Route>

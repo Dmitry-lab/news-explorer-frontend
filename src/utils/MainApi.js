@@ -3,14 +3,40 @@ const baseUrl = 'https://api.newsprj.students.nomoreparties.space';
 class MainApi {
   constructor(options) {
     this._url = options.baseUrl;
-    this._headers = { 'Content-Type': 'application/json' };
   }
 
   register(name, email, password) {
-    return fetch(`${this._url}/signup`, {
+    return fetch(`${baseUrl}/signup`, {
       method: 'POST',
-      headers: this._headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
+    })
+      .then((res) => {
+        if (res.ok)
+          return res.json();
+        else
+          return Promise.reject(res.status)
+      })
+  }
+
+  authorize(email, password) {
+    return fetch(`${baseUrl}/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+      .then((res) => {
+        if (res.ok)
+          return res.json();
+        else
+          return Promise.reject(res.status)
+      })
+  }
+
+  getUserInfo() {
+    return fetch(`${baseUrl}/users/me`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`}
     })
       .then((res) => {
         if (res.ok)

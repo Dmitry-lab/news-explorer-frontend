@@ -4,7 +4,16 @@ import saveIconMarked from '../../images/save-icon-marked.svg';
 import deleteIcon from '../../images/delete-icon.svg';
 import './NewsCard.css';
 
+
 function NewsCard(props) {
+  const [marked, setMarked] = React.useState(false);
+
+  const handleCardClick = (evt) => {
+    if (props.loggedIn) {
+      setMarked(!marked);
+    }
+  }
+
   return (
     <div className="card">
       <img className="card__image" src={props.imageSrc} alt="картинка карточки новости"/>
@@ -24,10 +33,10 @@ function NewsCard(props) {
             alt="иконка на кнопке удаления новости"
           />
         </button> :
-        <button className="card__save-button">
+        <button className="card__save-button" onClick={handleCardClick}>
           <img
-            className={props.marked ? "card__save-image card__save-image_marked" : "card__save-image"}
-            src={props.marked ? saveIconMarked : saveIcon}
+            className={marked ? "card__save-image card__save-image_marked" : "card__save-image"}
+            src={marked ? saveIconMarked : saveIcon}
             alt="иконка на кнопке сохранения новости"
           />
         </button>

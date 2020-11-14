@@ -19,7 +19,6 @@ function NewsCardList(props) {
         return (
           <NewsCard
             loggedIn={props.loggedIn}
-            marked={false}
             savedNews={props.savedNews}
             imageSrc={item.urlToImage}
             date={formatString(item.publishedAt)}

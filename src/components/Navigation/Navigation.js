@@ -4,6 +4,7 @@ import logoutIcon from '../../images/logout.svg';
 import logoutIconLight from '../../images/logout-light.svg';
 import burgerButton from '../../images/burger-button.svg';
 import burgerButtonLight from '../../images/burger-button-light.svg';
+import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 import { NavLink } from 'react-router-dom';
 
 function Navigation(props) {
@@ -11,6 +12,8 @@ function Navigation(props) {
   const classForButtonName = `navigation-bar__button-name ${props.lightStyle ? "navigation-bar__button-name_light" : ""}`;
   const classForButton = `navigation-bar__button ${props.lightStyle ? "navigation-bar__button_light" : ""}`;
   const activeClassForItems = props.lightStyle ? "navigation-bar__item_selected_light" : "navigation-bar__item_selected_dark";
+
+  const currentUser = React.useContext(CurrentUserContext);
 
   return (
     <nav className={props.lightStyle ? "navigation-bar navigation-bar_theme_light" : "navigation-bar navigation-bar_theme_image"}>
@@ -28,7 +31,7 @@ function Navigation(props) {
         </li>
         <li className="navigation-bar__item">
           <button className={classForButton} onClick={props.onMenuButtonClick}>
-            <span className={classForButtonName}>{props.name ? props.name : "Авторизоваться"}</span>
+            <span className={classForButtonName}>{currentUser.name ? currentUser.name : "Авторизоваться"}</span>
             {props.isLoggedIn &&
               <img
                 src={props.lightStyle ? logoutIconLight : logoutIcon}

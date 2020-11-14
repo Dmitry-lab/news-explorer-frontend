@@ -4,9 +4,12 @@ import './MobileNavigation.css';
 import logoutIcon from '../../images/logout.svg';
 import logoutIconLight from '../../images/logout-light.svg';
 import { Link } from 'react-router-dom';
+import { CurrentUserContext } from '../../contexts/CurrentUserContext';
 import closeButton from '../../images/close.svg';
 
 function MobileNavigation(props) {
+  const currentUser = React.useContext(CurrentUserContext);
+
   return (
     <nav className={props.isMobileNavOpened ? "mobile-navigation mobile-navigation_visible" : "mobile-navigation"}>
       <div className="mobile-navigation__logo">NewsExplorer</div>
@@ -23,7 +26,7 @@ function MobileNavigation(props) {
         </li>
         <li className="mobile-navigation__item">
           <button className="mobile-navigation__button" onClick={props.onMenuButtonClick}>
-            <span className="mobile-navigation__button-name">{props.name ? props.name : "Авторизоваться"}</span>
+            <span className="mobile-navigation__button-name">{currentUser.name ? currentUser.name : "Авторизоваться"}</span>
             {props.isLoggedIn &&
               <img
                 src={props.lightStyle ? logoutIconLight : logoutIcon}

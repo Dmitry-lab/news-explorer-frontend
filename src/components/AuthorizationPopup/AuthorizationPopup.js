@@ -14,7 +14,12 @@ function AuthorizationPopup(props) {
     }
   }, [props.isOpened])
 
-  const emailChangeHandler = (evt) => {
+  const handleSubmitClick = (evt) => {
+    evt.preventDefault();
+    props.onSubmit(email, password);
+  }
+
+  const handleEmailChange = (evt) => {
     setEmail(evt.target.value);
     if ((!evt.target.validity.valid) && evt.target.value)
       setEmailError('Неправильный формат Email')
@@ -22,7 +27,7 @@ function AuthorizationPopup(props) {
       setEmailError('');
   }
 
-  const passwordChangeHandler = (evt) => {
+  const handlePasswordChange = (evt) => {
     setPassword(evt.target.value);
   }
 
@@ -34,6 +39,7 @@ function AuthorizationPopup(props) {
       bottomButtonText="Зарегистрироваться"
       isNoValid={emailError || !email || !password}
       isInfo={false}
+      onSubmitClick={handleSubmitClick}
       {...props}
     >
       <label className="popup__label" htmlFor="auth-email">Email</label>
@@ -44,7 +50,7 @@ function AuthorizationPopup(props) {
         placeholder="Введите почту"
         required={true}
         value={email}
-        onChange={emailChangeHandler}
+        onChange={handleEmailChange}
       />
       <span className="popup__error-text">{emailError}</span>
       <label className="popup__label" htmlFor="reg-password">Пароль</label>
@@ -55,8 +61,9 @@ function AuthorizationPopup(props) {
         placeholder="Введите пароль"
         required={true}
         value={password}
-        onChange={passwordChangeHandler}
+        onChange={handlePasswordChange}
       />
+      <span className="popup__error-text popup__error-text_general">{props.formError}</span>
     </PopupWithForm>
   )
 }
