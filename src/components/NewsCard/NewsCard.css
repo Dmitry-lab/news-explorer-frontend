@@ -40,7 +40,7 @@
   font-size: 1.44em;
   line-height: 1.15em;
   font-weight: normal;
-  max-height: 2.5em;
+  height: 2.3em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -194,6 +194,7 @@
   .card__title {
     font-size: 1.22em;
     line-height: 1.09em;
+    height: 2.2em;
   }
 
   .text-elements {

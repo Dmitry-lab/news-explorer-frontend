@@ -1,4 +1,5 @@
 const baseUrl = 'https://api.newsprj.students.nomoreparties.space';
+//const baseUrl = 'http://localhost:4000';
 
 class MainApi {
   constructor(options) {
@@ -46,10 +47,30 @@ class MainApi {
       })
   }
 
-  saveArticle() {
+  saveArticle(atributes) {
     return fetch(`${baseUrl}/articles`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`}
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(atributes)
+    })
+    .then((res) => {
+      if (res.ok)
+        return res.json();
+      else
+        return Promise.reject(res.status)
+    })
+  }
+
+  getArticles() {
+    return fetch(`${baseUrl}/articles`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
     })
     .then((res) => {
       if (res.ok)

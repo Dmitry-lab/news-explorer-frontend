@@ -27,7 +27,7 @@ function App() {
   const [formError, setFormError] = React.useState('');
 
   const [foundNews, setFoundNews] = React.useState({ news: [], displayed: 0 });
-  const [currentUser, setCurrentUser] = React.useState({ name: '', _id: '', savedNews: [] });
+  const [currentUser, setCurrentUser] = React.useState({ name: '', savedNews: [] });
 
   const history = useHistory();
 
@@ -48,11 +48,13 @@ function App() {
     }
   }, []);
 
-  // загрузка данных о пользователе при монтировании App
+  /* загрузка данных о пользователе при монтировании App
   React.useEffect(() => {
-    if (localStorage.getItem('token'))
+    if (localStorage.getItem('token')) {
       fillСurrentUser();
-  }, []);
+      getSavedCards();
+    }
+  }, []); */
 
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
@@ -69,6 +71,7 @@ function App() {
   React.useEffect(() => {
     if (isLoggedIn) {
       fillСurrentUser();
+      getSavedCards();
     }
   }, [isLoggedIn])
 
@@ -84,17 +87,38 @@ function App() {
     currentMainApi.getUserInfo()
       .then((res) => {
         if (res.data) {
-          setCurrentUser({ name: res.data.name, _id: res.data._id, savedNews: [] })
+          setCurrentUser(prev => {
+            return { name: res.data.name, savedNews: prev.savedNews }
+          })
         } else {
-          if (localStorage.getItem('token'))
-            console.log('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
-          setLoggedIn(false);
+            new Error('Ошибка сервера');
         }
       })
-      .catch(() => {
-        if (localStorage.getItem('token'))
-          console.log('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+      .catch((err) => {
+        if (localStorage.getItem('token')) {
+          setCurrentUser({ name: '', savedNews: [] })
+          alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+        }
         setLoggedIn(false);
+      })
+  }
+
+  // получение массива карточек
+  const getSavedCards = () => {
+    currentMainApi.getArticles()
+      .then((res) => {
+        if (res.data) {
+          setCurrentUser(prev => {
+            return { name: prev.name, savedNews: res.data }
+          })
+        } else {
+          new Error('Ошибка сервера');
+        }
+      })
+      .catch((err) => {
+        if (err !== 404) {
+          alert('Ошибка сервера при загрузке сохраненных новостей. Попробуйте зайти на сайт позднее');
+        }
       })
   }
 
@@ -103,7 +127,14 @@ function App() {
     setFormError('');
     if (isLoggedIn) {
       localStorage.removeItem('token');
-      setCurrentUser({ name: '', _id: '', savedNews: [] });
+      const updatedFoundNews = foundNews.news.map(item => {
+        if (item.savedId)
+          item.savedId = null;
+        return item;
+      })
+
+      setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed })
+      setCurrentUser({ name: '', savedNews: [] });
       setLoggedIn(false);
       history.push('/');
     } else {
@@ -175,14 +206,19 @@ function App() {
     currentMainApi.saveArticle(cardAttributes)
       .then((res) => {
         if (res.data) {
-          const updatedFoundNews = foundNews.map((item, index) => {
+          const updatedFoundNews = foundNews.news.map((item, index) => {
             if (index === articleKey)
-              item.savedId = res.data._id
-
+              item.savedId = cardAttributes.keyword + ' ' + cardAttributes.link;
             return item
           })
           setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+          setCurrentUser({ name: currentUser.name, savedNews: [...currentUser.savedNews, res.data] })
+        } else {
+          new Error('Ошибка сервера');
         }
+      })
+      .catch((err) => {
+        alert('Ошибка обращения к серверу. Попробуйте выполнить действие позднее');
       })
   }
 
@@ -206,7 +242,6 @@ function App() {
           setFormError('Ошибка сервера. Попробуйте авторизоваться позднее.');
         }
       })
-
   }
 
   const handleSubmitRegistration = (name, email, password) => {
@@ -245,7 +280,7 @@ function App() {
         <Switch>
           <Route exact path="/">
             <Header
-              isLoggedIn={isLoggedIn}
+              isLoggedIn={isLoggedIn && currentUser.name}
               isMobileNavOpened={mobileNavIsOpened}
               onMenuButtonClick={handleMainMenuButtonClick}
               onMobileMenuClick={handleMobileMenuClick}
@@ -256,7 +291,7 @@ function App() {
             <Main
               status={searchStatus}
               newsObj={foundNews}
-              loggedIn={isLoggedIn}
+              loggedIn={isLoggedIn && currentUser.name}
               moreNews={isMoreNews}
               onMoreButtonClick={handleMoreButtonClick}
               onCardButtonClick={handleCardSaveButton}
@@ -284,7 +319,7 @@ function App() {
           <ProtectedRoute path="/saved-news" loggedIn={isLoggedIn} openAuthFunction={setAuthPopupOpened}>
             <SavedNewsHeader
               newsCount="5"
-              isLoggedIn={isLoggedIn}
+              isLoggedIn={isLoggedIn && currentUser.name}
               isMobileNavOpened={mobileNavIsOpened}
               onMenuButtonClick={handleMainMenuButtonClick}
               onMobileMenuClick={handleMobileMenuClick}

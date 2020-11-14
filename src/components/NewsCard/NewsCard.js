@@ -6,12 +6,10 @@ import './NewsCard.css';
 
 
 function NewsCard(props) {
-  const [marked, setMarked] = React.useState(false);
-
   const handleButtonClick = () => {
     if (props.loggedIn) {
       const cardInfo = {
-        keyWord: localStorage.getItem('keyword'),
+        keyword: localStorage.getItem('keyword'),
         title: props.title,
         text: props.text,
         date: props.date,
@@ -19,8 +17,7 @@ function NewsCard(props) {
         link: props.src,
         image: props.imageSrc
       }
-      props.onButtonClick(cardInfo, props.key);
-      setMarked(!marked);
+      props.onButtonClick(cardInfo, props.keyProp);
     }
   }
 
@@ -45,8 +42,8 @@ function NewsCard(props) {
         </button> :
         <button className="card__save-button" onClick={handleButtonClick}>
           <img
-            className={marked ? "card__save-image card__save-image_marked" : "card__save-image"}
-            src={marked ? saveIconMarked : saveIcon}
+            className={props.marked && props.loggedIn ? "card__save-image card__save-image_marked" : "card__save-image"}
+            src={props.marked && props.loggedIn ? saveIconMarked : saveIcon}
             alt="иконка на кнопке сохранения новости"
           />
         </button>
