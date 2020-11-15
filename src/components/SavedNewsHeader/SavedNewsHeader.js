@@ -8,7 +8,7 @@ function SavedNewsHeader(props) {
 
   const currentUser = React.useContext(CurrentUserContext);
   const wellcomeInfoEndings = {'1': ['ая', 'ья'], '2': ['ые', 'ьи'] , '3': ['ые', 'ьи'], '4': ['ые', 'ьи']}
-  const statisticsEndings = {'1': 'ому', '2': 'м', '3': 'м', '4': 'м'}
+  const statisticsEndings = {'1': 'ому', '2': 'м', '3': 'м', '4': 'м', '7': 'ми', '8': 'ми'}
 
   React.useEffect(() => {
     props.onMobileMenuClose();
@@ -25,7 +25,7 @@ function SavedNewsHeader(props) {
   const createStatisticsSubstr = (number) => {
     let lengthStr = (number + '').slice(-2);
     lengthStr = (+lengthStr > 20) ? lengthStr.slice(-1) : lengthStr;
-    const ending = statisticsEndings[lengthStr] ? statisticsEndings[lengthStr][0] :'ти';
+    const ending = statisticsEndings[lengthStr] ? statisticsEndings[lengthStr] :'ти';
     return `${number}-${ending}`;
   }
 

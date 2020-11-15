@@ -170,6 +170,7 @@ function App() {
     setSearchStatus({ waiting: true, error: '', success: false });
     localStorage.removeItem('keyword');
     localStorage.removeItem('newsArticles');
+    setPreviousKeyword(keyword);
 
     currentNewsApi.getNews(keyword)
       .then((data) => {
@@ -203,19 +204,42 @@ function App() {
 
   // обработка нажатия кнопки "Сохранить" на карточке
   const handleCardSaveButton = (cardAttributes, articleKey) => {
-    currentMainApi.saveArticle(cardAttributes)
-      .then((res) => {
-        if (res.data) {
-          const updatedFoundNews = foundNews.news.map((item, index) => {
-            if (index === articleKey)
-              item.savedId = cardAttributes.keyword + ' ' + cardAttributes.link;
-            return item
-          })
-          setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
-          setCurrentUser({ name: currentUser.name, savedNews: [...currentUser.savedNews, res.data] })
-        } else {
-          new Error('Ошибка сервера');
-        }
+    if (!isLoggedIn) {
+      setAuthPopupOpened(true);
+    } else {
+      currentMainApi.saveArticle(cardAttributes)
+        .then((res) => {
+          if (res.card) {
+            const updatedFoundNews = foundNews.news.map((item, index) => {
+              if (index === articleKey)
+                item.savedId = res.card._id;
+              return item
+            })
+            setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+            setCurrentUser({ name: currentUser.name, savedNews: [...currentUser.savedNews, res.card] })
+          } else {
+            new Error('Ошибка сервера');
+          }
+        })
+        .catch((err) => {
+          alert('Ошибка обращения к серверу. Попробуйте выполнить действие позднее');
+        })
+    }
+  }
+
+  // обработка нажатия кнопки "Удалить" на карточке
+  const handleCardDeleteButton = (articleId) => {
+    currentMainApi.deleteArticle(articleId)
+      .then(() => {
+        const updatedFoundNews = foundNews.news.map(item => {
+          if (item.savedId === articleId)
+            item.savedId = null;
+          return item
+        })
+        const updatedSavedNews = currentUser.savedNews.filter(item => item._id !== articleId);
+
+        setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+        setCurrentUser({ name: currentUser.name, savedNews: updatedSavedNews })
       })
       .catch((err) => {
         alert('Ошибка обращения к серверу. Попробуйте выполнить действие позднее');
@@ -294,7 +318,8 @@ function App() {
               loggedIn={isLoggedIn && currentUser.name}
               moreNews={isMoreNews}
               onMoreButtonClick={handleMoreButtonClick}
-              onCardButtonClick={handleCardSaveButton}
+              onCardSaveClick={handleCardSaveButton}
+              onCardDeleteClick={handleCardDeleteButton}
             />
             <AuthorizationPopup
               isOpened={authPopupIsOpened}
@@ -325,7 +350,7 @@ function App() {
               onMobileMenuClick={handleMobileMenuClick}
               onMobileMenuClose={handleMobileMenuClose}
             />
-            <SavedNews />
+            <SavedNews onCardDeleteClick={handleCardDeleteButton}/>
           </ProtectedRoute>
           <Route>
             <Redirect to="/" />

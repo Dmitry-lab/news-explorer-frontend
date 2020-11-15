@@ -2,10 +2,10 @@ import React from 'react';
 import NewsCardList from '../NewsCardList/NewsCardList'
 import './SavedNews.css';
 
-function SavedNews() {
+function SavedNews(props) {
   return (
     <section className="card-section">
-      <NewsCardList savedNews= {true}/>
+      <NewsCardList savedNews={true} onCardDeleteClick={props.onCardDeleteClick}/>
     </section>
   )
 }

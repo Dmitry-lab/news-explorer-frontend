@@ -7,18 +7,20 @@ import './NewsCard.css';
 
 function NewsCard(props) {
   const handleButtonClick = () => {
-    if (props.loggedIn) {
-      const cardInfo = {
-        keyword: localStorage.getItem('keyword'),
-        title: props.title,
-        text: props.text,
-        date: props.date,
-        source: props.source,
-        link: props.src,
-        image: props.imageSrc
-      }
-      props.onButtonClick(cardInfo, props.keyProp);
+    const cardInfo = {
+      keyword: localStorage.getItem('keyword'),
+      title: props.title,
+      text: props.text,
+      date: props.date,
+      source: props.source,
+      link: props.src,
+      image: props.imageSrc
     }
+
+    if (!props.marked)
+      props.onCardSaveClick(cardInfo, props.keyProp);
+    else
+      props.onCardDeleteClick(props.id);
   }
 
   return (
@@ -33,7 +35,7 @@ function NewsCard(props) {
       </div>
 
       {props.savedNews ?
-        <button className="card__save-button">
+        <button className="card__save-button" onClick={handleButtonClick}>
           <img
             className="card__save-image"
             src={deleteIcon}

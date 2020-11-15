@@ -63,6 +63,7 @@ function RegistrationPopup(props) {
         required={true}
         value={email}
         onChange={handleEmailChange}
+        pattern="^[a-z0-9!#$%'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
       />
       <span className="popup__error-text">{emailError}</span>
       <label className="popup__label" htmlFor="reg-password">Пароль</label>

@@ -26,6 +26,7 @@ function NewsCardList(props) {
               keyProp={index}
               loggedIn={props.loggedIn}
               savedNews={props.savedNews}
+              id={item._id}
               imageSrc={item.image}
               date={item.date}
               title={item.title}
@@ -33,6 +34,8 @@ function NewsCardList(props) {
               source={item.source}
               keyWord={item.keyword}
               src={item.link}
+              onCardDeleteClick={props.onCardDeleteClick}
+              marked={true}
             />
           )
         }) :
@@ -47,11 +50,13 @@ function NewsCardList(props) {
               date={formatString(item.publishedAt)}
               title={item.title}
               text={item.description}
+              id={item.savedId}
               source={item.source.name}
               keyWord={item.keyWord}
               src={item.url}
-              onButtonClick={props.onCardButtonClick}
               marked={item.savedId}
+              onCardDeleteClick={props.onCardDeleteClick}
+              onCardSaveClick={props.onCardSaveClick}
             />
           )
         })

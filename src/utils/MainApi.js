@@ -80,6 +80,18 @@ class MainApi {
     })
   }
 
+  deleteArticle(id) {
+    return fetch(`${baseUrl}/articles/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`}
+    })
+      .then((res) => {
+        if (res.ok)
+          return res.json();
+        else
+          return Promise.reject(res.status)
+      })
+  }
 }
 
 const currentMainApi = new MainApi({ baseUrl });
