@@ -76,7 +76,11 @@ class MainApi {
       if (res.ok)
         return res.json();
       else
-        return Promise.reject(res.status)
+        if (res.status === 404)
+          return Promise.resolve({ data: [] })
+        else
+          return Promise.reject(res.status)
+
     })
   }
 

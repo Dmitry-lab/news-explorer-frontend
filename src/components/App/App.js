@@ -48,14 +48,6 @@ function App() {
     }
   }, []);
 
-  /* загрузка данных о пользователе при монтировании App
-  React.useEffect(() => {
-    if (localStorage.getItem('token')) {
-      fillСurrentUser();
-      getSavedCards();
-    }
-  }, []); */
-
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
     setMobileNavOpened(false);
