@@ -71,7 +71,6 @@ function App() {
   React.useEffect(() => {
     if (isLoggedIn) {
       fillСurrentUser();
-      getSavedCards();
     }
   }, [isLoggedIn])
 
@@ -84,41 +83,34 @@ function App() {
 
   // получение данных пользователя
   const fillСurrentUser = () => {
+    let userName = '';
+
     currentMainApi.getUserInfo()
       .then((res) => {
         if (res.data) {
-          setCurrentUser(prev => {
-            return { name: res.data.name, savedNews: prev.savedNews }
-          })
+          userName = res.data.name;
+          return currentMainApi.getArticles()
         } else {
             new Error('Ошибка сервера');
         }
       })
+      .then((res) => {
+        setCurrentUser(prev => {
+          return { name: userName, savedNews: prev.savedNews }
+        })
+        setCurrentUser(prev => {
+          return { name: prev.name, savedNews: res.data }
+        })
+      })
       .catch((err) => {
         if (localStorage.getItem('token')) {
+          if (err === 401) {
+            localStorage.removeItem('token')
+          }
           setCurrentUser({ name: '', savedNews: [] })
           alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
         }
         setLoggedIn(false);
-      })
-  }
-
-  // получение массива карточек
-  const getSavedCards = () => {
-    currentMainApi.getArticles()
-      .then((res) => {
-        if (res.data) {
-          setCurrentUser(prev => {
-            return { name: prev.name, savedNews: res.data }
-          })
-        } else {
-          new Error('Ошибка сервера');
-        }
-      })
-      .catch((err) => {
-        if (err !== 404) {
-          alert('Ошибка сервера при загрузке сохраненных новостей. Попробуйте зайти на сайт позднее');
-        }
       })
   }
 
