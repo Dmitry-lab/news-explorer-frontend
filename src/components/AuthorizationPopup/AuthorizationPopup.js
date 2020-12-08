@@ -2,27 +2,32 @@ import React from 'react';
 import PopupWithForm from '../PopupWithForm/PopupWithForm';
 
 function AuthorizationPopup(props) {
-  const [email, setEmail] = React.useState("");
-  const [emailError, setEmailError] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [email, setEmail] = React.useState('');
+  const [emailError, setEmailError] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
   React.useEffect(() => {
     if (props.isOpened) {
-      setEmail("");
-      setPassword("");
-      setEmailError("");
+      setEmail('');
+      setPassword('');
+      setEmailError('');
     }
   }, [props.isOpened])
 
-  const emailChangeHandler = (evt) => {
-    setEmail(evt.target.value);
-    if ((!evt.target.validity.valid) && evt.target.value)
-      setEmailError("Неправильный формат Email")
-    else
-      setEmailError("");
+  const handleSubmitClick = (evt) => {
+    evt.preventDefault();
+    props.onSubmit(email, password);
   }
 
-  const passwordChangeHandler = (evt) => {
+  const handleEmailChange = (evt) => {
+    setEmail(evt.target.value);
+    if ((!evt.target.validity.valid) && evt.target.value)
+      setEmailError('Неправильный формат Email')
+    else
+      setEmailError('');
+  }
+
+  const handlePasswordChange = (evt) => {
     setPassword(evt.target.value);
   }
 
@@ -34,6 +39,7 @@ function AuthorizationPopup(props) {
       bottomButtonText="Зарегистрироваться"
       isNoValid={emailError || !email || !password}
       isInfo={false}
+      onSubmitClick={handleSubmitClick}
       {...props}
     >
       <label className="popup__label" htmlFor="auth-email">Email</label>
@@ -44,7 +50,8 @@ function AuthorizationPopup(props) {
         placeholder="Введите почту"
         required={true}
         value={email}
-        onChange={emailChangeHandler}
+        onChange={handleEmailChange}
+        pattern="^[a-z0-9!#$%'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
       />
       <span className="popup__error-text">{emailError}</span>
       <label className="popup__label" htmlFor="reg-password">Пароль</label>
@@ -55,8 +62,9 @@ function AuthorizationPopup(props) {
         placeholder="Введите пароль"
         required={true}
         value={password}
-        onChange={passwordChangeHandler}
+        onChange={handlePasswordChange}
       />
+      <span className="popup__error-text popup__error-text_general">{props.formError}</span>
     </PopupWithForm>
   )
 }

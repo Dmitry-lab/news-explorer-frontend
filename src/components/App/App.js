@@ -8,38 +8,120 @@ import SavedNews from '../SavedNews/SavedNews';
 import AuthorizationPopup from '../AuthorizationPopup/AuthorizationPopup';
 import RegistrationPopup from '../RegistrationPopup/RegistrationPopup';
 import InfoPopup from '../InfoPopup/InfoPopup';
-import { Route, Switch, useHistory } from 'react-router-dom';
-
+import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
+import { Route, Switch, Redirect, useHistory } from 'react-router-dom';
+import { CurrentUserContext } from '../../contexts/CurrentUserContext';
+import currentNewsApi from '../../utils/NewsApi';
+import currentMainApi from '../../utils/MainApi';
 
 function App() {
 
-  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, notFound: false, success: true });
+  const [searchStatus, setSearchStatus] = React.useState({ waiting: false, error: '', success: false });
   const [authPopupIsOpened, setAuthPopupOpened] = React.useState(false);
   const [regPopupIsOpened, setRegPopupOpened] = React.useState(false);
   const [infoPopupIsOpened, setInfoPopupOpened] = React.useState(false);
   const [mobileNavIsOpened, setMobileNavOpened] = React.useState(false);
-  const [isLoggedIn, setLoggedIn] = React.useState(false);
+  const [isLoggedIn, setLoggedIn] = React.useState(true);
+  const [isMoreNews, setMoreNews] = React.useState(true);
+  const [previousKeyword, setPreviousKeyword] = React.useState('');
+  const [formError, setFormError] = React.useState('');
+
+  const [foundNews, setFoundNews] = React.useState({ news: [], displayed: 0 });
+  const [currentUser, setCurrentUser] = React.useState({ name: '', savedNews: [] });
 
   const history = useHistory();
+
+  const serverError = 'Во время запроса произошла ошибка. Возможно, проблема с соединением или сервер недоступен. Подождите немного и попробуйте ещё раз.'
+
+  // загрузка данных о последнем поиске из localStorage при монтировании компонента App
+  React.useEffect(() => {
+    const newsFromStorage = JSON.parse(localStorage.getItem('newsArticles'));
+    const newsArrLength = newsFromStorage ? newsFromStorage.news.length : 0;
+
+    if (newsArrLength) {
+      setSearchStatus({ waiting: false, error: '', success: true })
+      setFoundNews({ news: newsFromStorage.news, displayed: newsFromStorage.displayed });
+      setPreviousKeyword(localStorage.getItem('keyword'));
+      if (newsArrLength <= newsFromStorage.displayed) {
+        setMoreNews(false);
+      }
+    }
+  }, []);
 
   // закрытие мобильного меню при открытии окна авторизации и при выходе из сеанса пользователя
   React.useEffect(() => {
     setMobileNavOpened(false);
   }, [authPopupIsOpened, isLoggedIn]);
 
+
+  // запись данных в localStorage
+  React.useEffect(() => {
+    localStorage.setItem('newsArticles', JSON.stringify(foundNews));
+  }, [foundNews])
+
+  // получение данные пользователя
+  React.useEffect(() => {
+    if (isLoggedIn) {
+      fillСurrentUser();
+    }
+  }, [isLoggedIn])
+
+  // обработка нажатия Esc при открытом модпльном окне
   const handleEscClick = (evt) => {
     if (evt.key === 'Escape') {
       handleCloseButtonClick();
     }
   }
 
+  // получение данных пользователя
+  const fillСurrentUser = () => {
+    let userName = '';
+
+    currentMainApi.getUserInfo()
+      .then((res) => {
+        if (res.data) {
+          userName = res.data.name;
+          return currentMainApi.getArticles()
+        } else {
+            new Error('Ошибка сервера');
+        }
+      })
+      .then((res) => {
+        setCurrentUser(prev => {
+          return { name: userName, savedNews: prev.savedNews }
+        })
+        setCurrentUser(prev => {
+          return { name: prev.name, savedNews: res.data }
+        })
+      })
+      .catch((err) => {
+        if (localStorage.getItem('token')) {
+          if (err === 401) {
+            localStorage.removeItem('token')
+          }
+          setCurrentUser({ name: '', savedNews: [] })
+          alert('Ошибка сервера при загрузке личных данных. Попробуйте зайти на сайт позднее');
+        }
+        setLoggedIn(false);
+      })
+  }
+
   // обработка нажатия кнопки на основной панели навигации
   const handleMainMenuButtonClick = () => {
+    setFormError('');
     if (isLoggedIn) {
+      localStorage.removeItem('token');
+      const updatedFoundNews = foundNews.news.map(item => {
+        if (item.savedId)
+          item.savedId = null;
+        return item;
+      })
+
+      setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed })
+      setCurrentUser({ name: '', savedNews: [] });
       setLoggedIn(false);
       history.push('/');
-    }
-    else {
+    } else {
       setAuthPopupOpened(true);
       document.addEventListener('keydown', handleEscClick);
     }
@@ -53,9 +135,10 @@ function App() {
     setInfoPopupOpened(false);
   }
 
-   // обработка перехода между popup'ами
+  // обработка перехода между popup'ами
   const handleChangePopupClick = () => {
     document.removeEventListener('keydown', handleEscClick);
+    setFormError('');
     if (authPopupIsOpened) {
       setAuthPopupOpened(false);
       setRegPopupOpened(true);
@@ -66,18 +149,129 @@ function App() {
     }
   }
 
-  const handleOnSubmitLogin = (evt) => {
-    evt.preventDefault();
-    document.removeEventListener('keydown', handleEscClick);
-    setLoggedIn(true);
-    setAuthPopupOpened(false);
+  // обработка нажатия кнопки "Искать"
+  const handleSearchSubmit = (keyword) => {
+    setSearchStatus({ waiting: true, error: '', success: false });
+    localStorage.removeItem('keyword');
+    localStorage.removeItem('newsArticles');
+    setPreviousKeyword(keyword);
+
+    currentNewsApi.getNews(keyword)
+      .then((data) => {
+        if (data.articles.length) {
+          setFoundNews({ news: data.articles, displayed: 3 });
+          setSearchStatus({ waiting: false, error: '', success: true })
+          if (data.articles.length > 3) {
+            setMoreNews(true)
+          } else {
+            setMoreNews(false)
+          }
+
+          localStorage.setItem('keyword', keyword);
+        } else {
+          setSearchStatus({ waiting: false, error: 'Поиск не дал результатов', success: false })
+        }
+      })
+      .catch(() => {
+        setSearchStatus({ waiting: false, error: serverError, success: false })
+      })
   }
 
-  const handleOnSubmitRegistration = (evt) => {
-    evt.preventDefault();
+  // обработка нажатия кнопки "Показать ещё"
+  const handleMoreButtonClick = () => {
+    const newNumber = foundNews.displayed + 3;
+    if (newNumber >= foundNews.news.length) {
+      setMoreNews(false);
+    }
+    setFoundNews({ news: foundNews.news, displayed: newNumber });
+  }
+
+  // обработка нажатия кнопки "Сохранить" на карточке
+  const handleCardSaveButton = (cardAttributes, articleKey) => {
+    if (!isLoggedIn) {
+      setAuthPopupOpened(true);
+    } else {
+      currentMainApi.saveArticle(cardAttributes)
+        .then((res) => {
+          if (res.card) {
+            const updatedFoundNews = foundNews.news.map((item, index) => {
+              if (index === articleKey)
+                item.savedId = res.card._id;
+              return item
+            })
+            setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+            setCurrentUser({ name: currentUser.name, savedNews: [...currentUser.savedNews, res.card] })
+          } else {
+            new Error('Ошибка сервера');
+          }
+        })
+        .catch((err) => {
+          alert('Ошибка обращения к серверу. Попробуйте выполнить действие позднее');
+        })
+    }
+  }
+
+  // обработка нажатия кнопки "Удалить" на карточке
+  const handleCardDeleteButton = (articleId) => {
+    currentMainApi.deleteArticle(articleId)
+      .then(() => {
+        const updatedFoundNews = foundNews.news.map(item => {
+          if (item.savedId === articleId)
+            item.savedId = null;
+          return item
+        })
+        const updatedSavedNews = currentUser.savedNews.filter(item => item._id !== articleId);
+
+        setFoundNews({ news: updatedFoundNews, displayed: foundNews.displayed });
+        setCurrentUser({ name: currentUser.name, savedNews: updatedSavedNews })
+      })
+      .catch((err) => {
+        alert('Ошибка обращения к серверу. Попробуйте выполнить действие позднее');
+      })
+  }
+
+  const handleOnSubmitLogin = (email, password) => {
     document.removeEventListener('keydown', handleEscClick);
-    setRegPopupOpened(false);
-    setInfoPopupOpened(true);
+    currentMainApi.authorize(email, password)
+      .then((res) => {
+        if (res.token) {
+          localStorage.setItem('token', res.token)
+          setLoggedIn(true);
+          setAuthPopupOpened(false);
+        } else {
+          return Promise.reject(res.status);
+        }
+      })
+      .catch((err) => {
+        setAuthPopupOpened(true);
+        if (err === 401) {
+          setFormError('Неправильный Email или пароль.');
+        } else {
+          setFormError('Ошибка сервера. Попробуйте авторизоваться позднее.');
+        }
+      })
+  }
+
+  const handleSubmitRegistration = (name, email, password) => {
+    document.removeEventListener('keydown', handleEscClick);
+    currentMainApi.register(name, email, password)
+      .then((res) => {
+        if (res.data) {
+          setRegPopupOpened(false);
+          setInfoPopupOpened(true);
+        } else {
+          setFormError('Ошибка сервера. Попробуйте зарегистрироваться снова.')
+        }
+      })
+      .catch((err) => {
+        setRegPopupOpened(true);
+        if (err === 409) {
+          setFormError('Пользователь с таким Email уже существует.');
+        } else {
+          setFormError('Ошибка сервера. Попробуйте зарегистрироваться снова.');
+        }
+      })
+
   }
 
   const handleMobileMenuClick = (evt) => {
@@ -89,49 +283,66 @@ function App() {
   }
 
   return (
-    <div className="page">
-      <Switch>
-        <Route exact path="/">
-          <Header
-            isLoggedIn={isLoggedIn}
-            isMobileNavOpened={mobileNavIsOpened}
-            onMenuButtonClick={handleMainMenuButtonClick}
-            onMobileMenuClick={handleMobileMenuClick}
-            onMobileMenuClose={handleMobileMenuClose}
-          />
-          <Main status={searchStatus} />
-          <AuthorizationPopup
-            isOpened={authPopupIsOpened}
-            onSubmit={handleOnSubmitLogin}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-          <RegistrationPopup
-            isOpened={regPopupIsOpened}
-            onSubmit={handleOnSubmitRegistration}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-          <InfoPopup
-            isOpened={infoPopupIsOpened}
-            onCloseClick={handleCloseButtonClick}
-            onChangePopup={handleChangePopupClick}
-          />
-        </Route>
-        <Route path="/saved-news">
-          <SavedNewsHeader
-            newsCount="5"
-            isLoggedIn={isLoggedIn}
-            isMobileNavOpened={mobileNavIsOpened}
-            onMenuButtonClick={handleMainMenuButtonClick}
-            onMobileMenuClick={handleMobileMenuClick}
-            onMobileMenuClose={handleMobileMenuClose}
-          />
-          <SavedNews />
-        </Route>
-      </Switch>
-      <Footer />
-    </div>
+    <CurrentUserContext.Provider value={currentUser}>
+      <div className="page">
+        <Switch>
+          <Route exact path="/">
+            <Header
+              isLoggedIn={isLoggedIn && currentUser.name}
+              isMobileNavOpened={mobileNavIsOpened}
+              onMenuButtonClick={handleMainMenuButtonClick}
+              onMobileMenuClick={handleMobileMenuClick}
+              onMobileMenuClose={handleMobileMenuClose}
+              onSearchSubmit={handleSearchSubmit}
+              keyword={previousKeyword}
+            />
+            <Main
+              status={searchStatus}
+              newsObj={foundNews}
+              loggedIn={isLoggedIn && currentUser.name}
+              moreNews={isMoreNews}
+              onMoreButtonClick={handleMoreButtonClick}
+              onCardSaveClick={handleCardSaveButton}
+              onCardDeleteClick={handleCardDeleteButton}
+            />
+            <AuthorizationPopup
+              isOpened={authPopupIsOpened}
+              onSubmit={handleOnSubmitLogin}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+              formError={formError}
+            />
+            <RegistrationPopup
+              isOpened={regPopupIsOpened}
+              onSubmit={handleSubmitRegistration}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+              formError={formError}
+            />
+            <InfoPopup
+              isOpened={infoPopupIsOpened}
+              onCloseClick={handleCloseButtonClick}
+              onChangePopup={handleChangePopupClick}
+            />
+          </Route>
+          <ProtectedRoute path="/saved-news" loggedIn={isLoggedIn} openAuthFunction={setAuthPopupOpened}>
+            <SavedNewsHeader
+              newsCount="5"
+              isLoggedIn={isLoggedIn && currentUser.name}
+              isMobileNavOpened={mobileNavIsOpened}
+              onMenuButtonClick={handleMainMenuButtonClick}
+              onMobileMenuClick={handleMobileMenuClick}
+              onMobileMenuClose={handleMobileMenuClose}
+            />
+            <SavedNews onCardDeleteClick={handleCardDeleteButton}/>
+          </ProtectedRoute>
+          <Route>
+            <Redirect to="/" />
+          </Route>
+        </Switch>
+        <Footer />
+      </div>
+    </CurrentUserContext.Provider>
   );
 }
 

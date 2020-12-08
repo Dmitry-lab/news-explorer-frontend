@@ -2,40 +2,45 @@ import React from 'react';
 import PopupWithForm from '../PopupWithForm/PopupWithForm';
 
 function RegistrationPopup(props) {
-  const [email, setEmail] = React.useState("");
-  const [emailError, setEmailError] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [name, setName] = React.useState("");
-  const [nameError, setNameError] = React.useState("");
+  const [email, setEmail] = React.useState('');
+  const [emailError, setEmailError] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [name, setName] = React.useState('');
+  const [nameError, setNameError] = React.useState('');
 
   React.useEffect(() => {
     if (props.isOpened) {
-      setEmail("");
-      setName("");
-      setPassword("");
-      setEmailError("");
-      setNameError("");
+      setEmail('');
+      setName('');
+      setPassword('');
+      setEmailError('');
+      setNameError('');
     }
   }, [props.isOpened])
 
-  const emailChangeHandler = (evt) => {
-    setEmail(evt.target.value);
-    if ((!evt.target.validity.valid) && evt.target.value)
-      setEmailError("Неправильный формат Email")
-    else
-      setEmailError("");
+  const handleSubmitClick = (evt) => {
+    evt.preventDefault();
+    props.onSubmit(name, email, password);
   }
 
-  const passwordChangeHandler = (evt) => {
+  const handleEmailChange = (evt) => {
+    setEmail(evt.target.value);
+    if ((!evt.target.validity.valid) && evt.target.value)
+      setEmailError('Неправильный формат Email')
+    else
+      setEmailError('');
+  }
+
+  const handlePasswordChange = (evt) => {
     setPassword(evt.target.value);
   }
 
-  const nameChangeHandler = (evt) => {
+  const handleNameChange = (evt) => {
     setName(evt.target.value);
     if ((!evt.target.validity.valid) && evt.target.value)
-      setNameError("Имя должно содержать минимум 2 символа")
+      setNameError('Имя должно содержать минимум 2 символа')
     else
-      setNameError("");
+      setNameError('');
   }
 
   return (
@@ -46,6 +51,7 @@ function RegistrationPopup(props) {
       bottomButtonText="Войти"
       isNoValid={emailError || nameError || !name || !email || !password}
       isInfo={false}
+      onSubmitClick={handleSubmitClick}
       {...props}
     >
       <label className="popup__label" htmlFor="reg-email">Email</label>
@@ -56,7 +62,8 @@ function RegistrationPopup(props) {
         placeholder="Введите почту"
         required={true}
         value={email}
-        onChange={emailChangeHandler}
+        onChange={handleEmailChange}
+        pattern="^[a-z0-9!#$%'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
       />
       <span className="popup__error-text">{emailError}</span>
       <label className="popup__label" htmlFor="reg-password">Пароль</label>
@@ -67,7 +74,7 @@ function RegistrationPopup(props) {
         placeholder="Введите пароль"
         required={true}
         value={password}
-        onChange={passwordChangeHandler}
+        onChange={handlePasswordChange}
       />
       <label className="popup__label" htmlFor="name">Имя</label>
       <input
@@ -77,11 +84,12 @@ function RegistrationPopup(props) {
         placeholder="Введите своё имя"
         required={true}
         value={name}
-        onChange={nameChangeHandler}
+        onChange={handleNameChange}
         minLength="2"
         maxLength="30"
       />
       <span className="popup__error-text">{nameError}</span>
+      <span className="popup__error-text popup__error-text_general">{props.formError}</span>
     </PopupWithForm>
   )
 }
